@@ -59,6 +59,7 @@
                         <div class="dropdown-menu">
                             <a class="dropdown-item" href="/classification_iris">아이리스 분류</a>
                             <a class="dropdown-item" href="/classification">이미지 분류</a>
+                            <a class="dropdown-item" href="/classification_indians">당노병 분류</a>
                         </div>
                     </li>
                     <li class="nav-item">
@@ -66,11 +67,10 @@
                             href="{% if menu.clst %} # {% else %} /clustering {% endif %}">군집</a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">멤버</a>
+                        <a class="nav-link dropdown-toggle {% if menu.user %}active{% endif %}" data-toggle="dropdown" href="#">멤버</a>
                         <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#">김태균</a>
-                            <a class="dropdown-item" href="#">이용규</a>
-                            <a class="dropdown-item" href="#">김민우</a>
+                            <a class="dropdown-item" href="/member/관리자?nickname=최강 동안미모">관리자</a>
+                            <a class="dropdown-item" href="/member/조현철">조현철</a>
                         </div>
                     </li>
                 </ul>

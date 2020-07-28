@@ -53,6 +53,11 @@ def load_iris():
     model_iris_dt = joblib.load(os.path.join(app.root_path, 'model/iris_dt.pkl'))
     model_iris_deep = load_model(os.path.join(app.root_path, 'model/iris_deep.h5'))
 
+model_indians = None
+def load_indians():
+    global  model_indians
+    model_indians = load_model(os.path.join(app.root_path, 'models/pima.h5'))
+
 @app.route('/')
 def index():
     menu = {'home':True, 'rgrs':False, 'stmt':False, 'clsf':False, 'clst':False, 'user':False}
@@ -74,6 +79,29 @@ def regression():
         swid = round(swid, 4)
         iris = {'slen':slen, 'swid':swid, 'plen':plen, 'pwid':pwid, 'species':species}
         return render_template('reg_result.html', menu=menu, iris=iris)
+
+@app.route('/classification_indians', methods=['GET', 'POST'])
+def classification_indians():
+    menu = {'home': False, 'intro':False, 'rgrs': False, 'stmt': False, 'clsf': True, 'clst': False, 'user': False}
+    if request.method == 'GET':
+        return render_template('classification_indians.html', menu=menu)
+    else:
+        sp_names = ['당뇨 아님', '당뇨']
+        pregnant = int(request.form['pregnant'])
+        plasma = int(request.form['plasma'])
+        pressure = int(request.form['pressure'])
+        thickness = int(request.form['thickness'])
+        insulin = int(request.form['insulin'])
+        BMI = float(request.form['bmi'])
+        pedigree = float(request.form['pedigree'])
+        age = int(request.form['age'])
+        
+        test_data = np.array([pregnant, plasma, pressure, thickness, insulin, BMI, pedigree, age]).reshape(1, 8)
+        results = sp_names[model_indians.predict_classes(test_data)[0][0]]
+
+        indians = {'pregnant': pregnant, 'plasma': plasma, 'pressure': pressure, 'thickness': thickness, 'insulin': insulin, 'bmi': BMI,
+                'pedigree': pedigree, 'age':age, 'result': results}
+        return render_template('clf_indians_result.html', menu=menu, indians=indians)
 
 @app.route('/sentiment', methods=['GET', 'POST'])
 def sentiment():
@@ -148,15 +176,8 @@ def clustering():
         mtime = int(os.stat(img_file).st_mtime)        
         return render_template('clu_result.html', menu=menu, K=ncls)
 
-@app.route('/member/<name>')
-def member():
-    menu = {'home':False, 'rgrs':False, 'stmt':False, 'clsf':False, 'clst':False, 'user':True}
-    nickname = request.args.get('nickname', '별명:없음')
-    return render_template('user.html', menu=menu, name=name, nickname=nickname)   
-
 if __name__ == '__main__':
     load_movie_lr()
     load_movie_nb()
     load_iris()
     app.run()
-    # app.run(host='0.0.0.0')
