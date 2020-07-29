@@ -51,7 +51,13 @@ def load_iris():
     model_iris_lr = joblib.load(os.path.join(app.root_path, 'model/iris_lr.pkl'))
     model_iris_svm = joblib.load(os.path.join(app.root_path, 'model/iris_svm.pkl'))
     model_iris_dt = joblib.load(os.path.join(app.root_path, 'model/iris_dt.pkl'))
-    model_iris_deep = load_model(os.path.join(app.root_path, 'model/iris_deep.h5'))
+    model_iris_deep = load_model(os.path.join(app.root_path, 'model/iris_deep.hdf5'))
+
+model_indians = None
+
+def load_indians():
+    global  model_indians
+    model_indians = load_model(os.path.join(app.root_path, 'model/best_model.hdf5'))
 
 @app.route('/')
 def index():
@@ -101,14 +107,18 @@ def classification():
     if request.method == "GET":
         return render_template('classification.html', menu=menu)
     else:
-        f = request.files['image']
-        filename =  os.path.join(app.root_path, 'static/images/Uploads/') + secure_filename(f.filename)
-        f.save(filename)
-        img = np.array(Image.open(filename).resize((224,224)))
-        yhat = vgg.predict(img.reshape(-1, 224, 224, 3))
-        label_key = np.argmax(yhat)
-        label = decode_predictions(yhat)
-        label = label[0][0]
+        try:
+            f = request.files['image']
+            filename =  os.path.join(app.root_path, 'static/images/Uploads/') + secure_filename(f.filename)
+            f.save(filename)
+            img = np.array(Image.open(filename).resize((224,224)))
+            yhat = vgg.predict(img.reshape(-1, 224, 224, 3))
+            label_key = np.argmax(yhat)
+            label = decode_predictions(yhat)
+            label = label[0][0]
+        except:
+            return render_template('classification.html', menu=menu)
+
         return render_template('cla_result.html', menu=menu,
                                 filename = secure_filename(f.filename),
                                 name=label[1], pct='%.2f' % (label[2]*100))
@@ -117,20 +127,21 @@ def classification():
 def classification_iris():
     menu = {'home':False, 'rgrs':False, 'stmt':False, 'clsf':True, 'clst':False, 'user':False}
     if request.method == 'GET':
-         return render_template('classification_iris.html', menu=menu)
+        return render_template('classification_iris.html', menu=menu)
     else:
         sp_names = ['Setosa', 'Versicolor', 'Virginica']
         slen = float(request.form['slen'])      # Sepal Length
         swid = float(request.form['swid'])      # Sepal Width
         plen = float(request.form['plen'])      # Petal Length
-        pwid = float(request.form['pwid'])       # Petal Width
-        test_data = np. array([slen, swid, plen, pwid]).reshape(1,4)
-        species_lr = sp_names[ model_iris_lr.predict(test_data)[0]]
-        species_svm = sp_names[ model_iris_svm.predict(test_data)[0]]
-        species_dt = sp_names[ model_iris_dt.predict(test_data)[0]]
+        pwid = float(request.form['pwid'])      # Petal Width
+        test_data = np.array([slen, swid, plen, pwid]).reshape(1,4)
+        species_lr = sp_names[model_iris_lr.predict(test_data)[0]]
+        species_svm = sp_names[model_iris_svm.predict(test_data)[0]]
+        species_dt = sp_names[model_iris_dt.predict(test_data)[0]]
         species_deep = sp_names[model_iris_deep.predict_classes(test_data)[0]]
-        #species_deep = 'Versicolor'
-        iris = {'slen':slen, 'swid':swid, 'plen':plen, 'pwid':pwid, 'species_lr':species_lr, 'species_svm': species_svm, 'species_dt': species_dt, 'species_deep':species_deep}
+        iris = {'slen':slen, 'swid':swid, 'plen':plen, 'pwid':pwid, 
+                'species_lr':species_lr, 'species_svm':species_svm,
+                'species_dt':species_dt, 'species_deep':species_deep}
         return render_template('cla_iris_result.html', menu=menu, iris=iris)
 
 @app.route('/clustering', methods=['GET', 'POST'])
@@ -148,6 +159,29 @@ def clustering():
         mtime = int(os.stat(img_file).st_mtime)        
         return render_template('clu_result.html', menu=menu, K=ncls)
 
+@app.route('/classification_indians', methods=['GET', 'POST'])
+def classification_indians():
+    menu = {'home': False, 'intro':False, 'rgrs': False, 'stmt': False, 'clsf': True, 'clst': False, 'user': False}
+    if request.method == 'GET':
+        return render_template('classification_indians.html', menu=menu)
+    else:
+        sp_names = ['당뇨 아님', '당뇨']
+        pregnant = int(request.form['pregnant'])
+        plasma = int(request.form['plasma'])
+        pressure = int(request.form['pressure'])
+        thickness = int(request.form['thickness'])
+        insulin = int(request.form['insulin'])
+        BMI = float(request.form['bmi'])
+        pedigree = float(request.form['pedigree'])
+        age = int(request.form['age'])
+
+        test_data = np.array([pregnant, plasma, pressure, thickness, insulin, BMI, pedigree, age]).reshape(1, 8)
+        result = sp_names[model_indians.predict_classes(test_data)[0][0]]
+
+        indians = {'pregnant': pregnant, 'plasma': plasma, 'pressure': pressure, 'thickness': thickness,
+                'insulin': insulin, 'bmi': BMI, 'pedigree': pedigree, 'age':age, 'result': result}
+        return render_template('clf_indians_result.html', menu=menu, indians=indians)
+
 @app.route('/member/<name>')
 def member():
     menu = {'home':False, 'rgrs':False, 'stmt':False, 'clsf':False, 'clst':False, 'user':True}
@@ -158,5 +192,6 @@ if __name__ == '__main__':
     load_movie_lr()
     load_movie_nb()
     load_iris()
-    app.run()
-    # app.run(host='0.0.0.0')
+    load_indians()
+    # app.run()
+    app.run(host='0.0.0.0')
